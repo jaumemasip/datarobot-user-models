@@ -104,6 +104,10 @@ pip install \
     --extra-index-url https://artifactory.int.datarobot.com/artifactory/api/pypi/python-all/simple \
     datarobot-mlops
 
+echo "YAKOFF DEBUG 1"
+pip show scikit-learn
+echo "YAKOFF DEBUG 2"
+
 pytest tests/drum/ \
        -k "not test_drum_monitoring_no_mlops_installed" \
        --junit-xml="$GIT_ROOT/results_integration.xml"
