@@ -20,7 +20,8 @@ RUN pip3 install -r requirements.txt --no-cache-dir && \
 # Code from the custom model tarball can overwrite the code here
 COPY ./ /opt/code/
 
-ENV CODE_DIR=/opt/code ADDRESS=0.0.0.0:8080
+ENV HOME=/opt CODE_DIR=/opt/code ADDRESS=0.0.0.0:8080
+WORKDIR /opt/code
 
 ENV WITH_ERROR_SERVER=1
 # Uncomment the following line to switch from Flask to uwsgi server
