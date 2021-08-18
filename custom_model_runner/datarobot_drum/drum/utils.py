@@ -22,7 +22,7 @@ from datarobot_drum.drum.common import (
     PredictionServerMimetypes,
     InputFormatToMimetype,
     get_pyarrow_module,
-    ArgumentOptionsEnvVars,
+    ArgumentOptionsEnvVars, TargetType,
 )
 
 logger = logging.getLogger(LOGGER_NAME_PREFIX + "." + __name__)
@@ -310,13 +310,8 @@ def capture_R_traceback_if_errors(r_handler, logger):
 
 
 def marshal_labels(expected_labels: List[str], actual_labels: List[Any]):
-    if set(expected_labels) == set(actual_labels):
-        return actual_labels
-
     if (
-        _can_be_converted_to_float(expected_labels)
-        and _can_be_converted_to_float(actual_labels)
-        and set(floatify(l) for l in expected_labels) == set(floatify(l) for l in actual_labels)
+        set(standardize(l) for l in expected_labels) == set(standardize(l) for l in actual_labels)
     ):
         return _order_by_float(expected_labels, actual_labels)
 
@@ -337,22 +332,53 @@ def _order_by_float(expected_labels, actual_labels):
 
     def get_corresponding_expected_label(a_l):
         for e_l in expected_labels:
-            if floatify(a_l) == floatify(e_l):
+            if standardize(a_l) == standardize(e_l):
                 return e_l
 
     return [get_corresponding_expected_label(_l) for _l in actual_labels]
 
 
-def floatify(label):
+def standardize(label):
+    # First, hope it's a float
     try:
         return float(label)
     except ValueError:
-        return float(strtobool(label))
+        pass
 
-
-def _can_be_converted_to_float(labels):
+    # Maybe if its a boolean we can make it floaty anyways
     try:
-        [floatify(label) for label in labels]
-        return True
+        return float(strtobool(label))
     except ValueError:
-        return False
+        pass
+
+    # Okay lets just do a str.lower
+    assert isinstance(label, str)
+    return label.lower()
+
+
+def marshal_prediction_data(labels_to_use, predictions, target_type):
+    predictions = duplicate_one_dim_probabilities(predictions, target_type)
+    validate_pred_shape(labels_to_use, predictions, target_type)
+    return pd.DataFrame(predictions, columns=labels_to_use)
+
+
+def validate_pred_shape(labels_to_use, predictions, target_type):
+    if predictions.shape[1] != len(labels_to_use):
+        raise DrumCommonException(
+            "Target type '{}' predictions must return the "
+            "probability distribution for all class labels. "
+            "Expected {} columns, but recieved {}".format(
+                target_type, len(labels_to_use), predictions.shape[1]
+            )
+        )
+
+
+def duplicate_one_dim_probabilities(predictions, target_type):
+    if predictions.shape[1] == 1:
+        if target_type == TargetType.MULTICLASS:
+            raise DrumCommonException(
+                "Target type '{}' predictions must return the "
+                "probability distribution for all class labels".format(target_type)
+            )
+        predictions = np.concatenate((1 - predictions, predictions), axis=1)
+    return predictions

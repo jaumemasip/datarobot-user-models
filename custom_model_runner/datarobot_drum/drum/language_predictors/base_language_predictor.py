@@ -94,6 +94,7 @@ class BaseLanguagePredictor(ABC):
             )
 
     def validate_output(self, output_df):
+        validate_labels()
         if self._target_type.value in TargetType.CLASSIFICATION.value:
             try:
                 added_probs = output_df.sum(axis=1)
@@ -102,9 +103,6 @@ class BaseLanguagePredictor(ABC):
                 raise ValueError(
                     "Your prediction probabilities do not add up to 1. \n{}".format(output_df)
                 )
-        if self._target_type.value == TargetType.TRANSFORM.value:
-            if self._schema_validator:
-                self._schema_validator.validate_outputs(output_df)
 
     def predict(self, **kwargs):
         start_predict = time.time()
@@ -124,7 +122,8 @@ class BaseLanguagePredictor(ABC):
         output = self._transform(**kwargs)
         output_X = output[0]
         # TODO: [RAPTOR-5765] validate output_y
-        self.validate_output(output_X)
+        if self._schema_validator:
+            self._schema_validator.validate_outputs(output_X)
         return output
 
     @abstractmethod

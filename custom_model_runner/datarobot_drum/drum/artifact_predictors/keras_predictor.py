@@ -66,34 +66,6 @@ class KerasPredictor(ArtifactPredictor):
         return self._model
 
     def predict(self, data, model, **kwargs):
-        # checking if positive/negative class labels were provided
-        # done in the base class
         super(KerasPredictor, self).predict(data, model, **kwargs)
         predictions = model.predict(data)
-        if self.target_type.value in TargetType.CLASSIFICATION.value:
-            if predictions.shape[1] == 1:
-                if self.target_type == TargetType.MULTICLASS:
-                    if len(self.class_labels) > 2:
-                        raise DrumCommonException(
-                            "Target type '{}' predictions must return the "
-                            "probability distribution for all class labels".format(self.target_type)
-                        )
-                    pos_label = self.class_labels[1]
-                    neg_label = self.class_labels[0]
-                else:
-                    pos_label = self.positive_class_label
-                    neg_label = self.negative_class_label
-                predictions = pd.DataFrame(predictions, columns=[pos_label])
-                predictions[neg_label] = 1 - predictions[pos_label]
-            else:
-                predictions = pd.DataFrame(predictions, columns=self.class_labels)
-        elif self.target_type in [TargetType.REGRESSION, TargetType.ANOMALY]:
-            predictions = pd.DataFrame(predictions, columns=[REGRESSION_PRED_COLUMN])
-        else:
-            raise DrumCommonException(
-                "Target type '{}' is not supported by '{}' predictor".format(
-                    self.target_type.value, self.__class__.__name__
-                )
-            )
-
-        return predictions
+        assert False, "figure out how to get labels out of keras"

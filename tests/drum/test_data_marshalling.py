@@ -1,4 +1,4 @@
-from datarobot_drum.drum.utils import _order_by_float, _can_be_converted_to_float, marshal_labels
+from datarobot_drum.drum.utils import _order_by_float,marshal_labels
 
 
 def test_marshal_labels():
@@ -19,8 +19,3 @@ def test__order_by_float():
         "0.4",
         "1.4",
     ]
-
-
-def test_can_be_converted():
-    assert _can_be_converted_to_float(["05.99999999", "0.2", "-.13"])
-    assert not _can_be_converted_to_float(["1.0_", "1", "2"])

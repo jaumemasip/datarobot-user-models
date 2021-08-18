@@ -278,19 +278,6 @@ class PythonModelAdapter:
                 "Transformation resulted in different number of rows than original data"
             )
 
-    def _validate_predictions(self, to_validate, class_labels):
-        self._validate_data(to_validate, "Predictions")
-        columns_to_validate = set(to_validate.columns)
-        if class_labels:
-            marshal_labels(expected_labels=class_labels, actual_labels=to_validate)
-
-        elif columns_to_validate != {REGRESSION_PRED_COLUMN}:
-            raise ValueError(
-                "Expected predictions to have a single {} column, but encountered {}".format(
-                    REGRESSION_PRED_COLUMN, columns_to_validate
-                )
-            )
-
     @property
     def supported_payload_formats(self):
         formats = SupportedPayloadFormats()
@@ -485,8 +472,6 @@ class PythonModelAdapter:
                 raise type(exc)(
                     "Model post-process hook failed to post-process predictions: {}".format(exc)
                 ).with_traceback(sys.exc_info()[2]) from None
-
-        self._validate_predictions(predictions, class_labels)
 
         return predictions
 
